@@ -38,7 +38,7 @@
   },
   "peerDependencies": {
     "astro": ">=4.9.0",
-    "vite": "*",
+    "vite": ">=8.0.0",
     "vue": "^3.0.0"
   }
 }

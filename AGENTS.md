@@ -42,7 +42,6 @@ These are documented constraints of the Container API approach, not bugs:
 - No client hydration of `client:*` islands.
 - No framework renderer integrations (React/Vue/Svelte/Solid/Preact inside `.astro`).
 - No prop pass-through from the Vue host to the `.astro` module.
-- No relative `.astro → .astro` imports (compiled module lives in `node_modules/.astro-slidev/`).
 - Astro Container API is upstream-experimental and may break on minor/patch bumps.
 
 If a task touches one of these, surface it before changing behavior.
