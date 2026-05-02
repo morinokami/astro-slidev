@@ -18,7 +18,7 @@
       "ignoreDependencies": ["@typescript/native-preview"]
     },
     "playground": {
-      "entry": ["vite.config.ts", "setup/*.ts", "components/**/*.{astro,vue}", "snippets/**/*.ts"],
+      "entry": ["vite.config.ts", "setup/*.ts", "components/**/*.{astro,vue}"],
       "project": ["**/*.{ts,vue,astro}"],
       "ignoreDependencies": ["@slidev/theme-default", "@slidev/theme-seriph"]
     }
