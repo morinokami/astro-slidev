@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { transformWithOxc } from "vite";
 
 type AstroContainerModule = typeof import("astro/container");
 type AstroContainer = Awaited<
@@ -39,7 +40,7 @@ function filenameFor(absPath: string): string {
   return `${createHash("sha1").update(absPath).digest("hex").slice(0, 16)}.mjs`;
 }
 
-export type ResolveAstro = (specifier: string, importer: string) => Promise<string | null>;
+export type ResolveAstro = (importPath: string, absPath: string) => Promise<string | null>;
 
 export interface RenderResult {
   html: string;
@@ -78,7 +79,7 @@ export async function renderAstroFile(
   const deps = new Set<string>();
   const seen = new Set<string>();
 
-  const process = async (absPath: string, source: string): Promise<void> => {
+  const compile = async (absPath: string, source: string): Promise<void> => {
     if (seen.has(absPath)) return;
     seen.add(absPath);
     deps.add(absPath);
@@ -91,29 +92,41 @@ export async function renderAstroFile(
     });
     cssByFile.set(absPath, result.css ?? []);
 
-    let code = result.code.replace(STRIP_SIDE_EFFECT_RE, "");
+    // Astro's compiler preserves frontmatter verbatim, so TS-only syntax
+    // (`interface`, type annotations, `as` casts, etc.) survives into the
+    // emitted module. Strip types via Vite's oxc transform before we hand
+    // the module to Node's ESM loader.
+    const stripped = await transformWithOxc(result.code, absPath, { lang: "ts" });
+    let code = stripped.code.replace(STRIP_SIDE_EFFECT_RE, "");
 
-    const specs = new Set<string>();
-    for (const m of code.matchAll(FROM_ASTRO_RE)) specs.add(m[2]!);
-    for (const m of code.matchAll(SIDE_EFFECT_ASTRO_RE)) specs.add(m[2]!);
+    const astroImportPaths = new Set<string>();
+    for (const m of code.matchAll(FROM_ASTRO_RE)) astroImportPaths.add(m[2]!);
+    for (const m of code.matchAll(SIDE_EFFECT_ASTRO_RE)) astroImportPaths.add(m[2]!);
 
     const depEntries = await Promise.all(
-      [...specs].map(async (spec) => {
-        const depAbs = await resolveAstro(spec, absPath);
+      [...astroImportPaths].map(async (importPath) => {
+        const depAbs = await resolveAstro(importPath, absPath);
         if (!depAbs) {
           throw new Error(
-            `[astro-slidev] Failed to resolve ${JSON.stringify(spec)} from ${absPath}`,
+            `[astro-slidev] Failed to resolve ${JSON.stringify(importPath)} from ${absPath}`,
           );
         }
-        return [spec, depAbs] as const;
+        return [importPath, depAbs] as const;
       }),
     );
-    const specToFilename = new Map(depEntries.map(([spec, depAbs]) => [spec, filenameFor(depAbs)]));
+    const importPathToFilename = new Map(
+      depEntries.map(([importPath, depAbs]) => [importPath, filenameFor(depAbs)]),
+    );
 
-    const replaceImport = (full: string, p1: string, p2: string, p3: string): string => {
-      const filename = specToFilename.get(p2);
-      if (!filename) return full;
-      return `${p1}./${filename}${p3}`;
+    const replaceImport = (
+      match: string,
+      prefix: string,
+      importPath: string,
+      closingQuote: string,
+    ): string => {
+      const filename = importPathToFilename.get(importPath);
+      if (!filename) return match;
+      return `${prefix}./${filename}${closingQuote}`;
     };
     code = code.replace(FROM_ASTRO_RE, replaceImport);
     code = code.replace(SIDE_EFFECT_ASTRO_RE, replaceImport);
@@ -127,13 +140,13 @@ export async function renderAstroFile(
       depEntries.map(async ([, depAbs]) => {
         if (seen.has(depAbs)) return;
         const depSource = await readFile(depAbs, "utf8");
-        await process(depAbs, depSource);
+        await compile(depAbs, depSource);
       }),
     );
   };
 
   try {
-    await process(entryAbsPath, entrySource);
+    await compile(entryAbsPath, entrySource);
     const entryFile = join(sessionDir, filenameFor(entryAbsPath));
     const mod = await import(pathToFileURL(entryFile).href);
     const container = await getContainer();

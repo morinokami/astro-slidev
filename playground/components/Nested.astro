@@ -1,21 +1,36 @@
 ---
 import Card from "./Card.astro";
+
+const tags = ["astro", "slidev", "vite"];
 ---
 
-<section class="nested-demo">
-  <Card title="Nested .astro" tags={["astro", "slidev"]}>
-    <p>This <code>Card</code> imports a <code>Badge</code> from another <code>.astro</code> file. Both are compiled recursively and their scoped styles are routed through Vite's CSS pipeline.</p>
+<section class="nested-astro">
+  <h2>Nested from Astro</h2>
+  <p>This block composes <code>Card.astro</code> and <code>Badge.astro</code>; each lives in its own file and contributes its own scoped styles.</p>
+  <Card title="Composed via nested .astro" tags={tags}>
+    <p>The outer wrapper, the card, and its tags all live in separate <code>.astro</code> files and are compiled recursively.</p>
   </Card>
 </section>
 
 <style>
-  .nested-demo {
-    display: grid;
-    gap: 0.75rem;
+  .nested-astro {
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #f8fafc;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   }
-  .nested-demo code {
-    background: #1e293b;
-    padding: 0 0.25rem;
+  .nested-astro h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.4rem;
+    color: #f97316;
+  }
+  .nested-astro > p {
+    margin: 0 0 0.75rem;
+  }
+  .nested-astro code {
+    background: rgba(248, 250, 252, 0.1);
+    padding: 0 0.3rem;
     border-radius: 0.25rem;
     font-size: 0.9em;
   }

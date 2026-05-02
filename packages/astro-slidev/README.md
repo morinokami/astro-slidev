@@ -49,14 +49,14 @@ Place a `.astro` file under `./components/` and reference it from a slide by its
 ## What works
 
 - Frontmatter scripts and expression interpolation (`{value}`, `.map(...)` in markup)
+- TypeScript syntax in the frontmatter (`interface`, type annotations, `as` casts) — types are stripped via Vite's oxc transform before the module is loaded
 - Scoped `<style>` blocks — emitted CSS chunks are routed through Vite's CSS pipeline and participate in HMR
 - HMR on `.astro` source changes (including transitive `.astro` deps)
 - `.astro` importing another `.astro` (e.g. `import Card from "./Card.astro"`), with paths resolved through Vite's resolver (so aliases / tsconfig paths work)
 
 ## Limitations
 
-- **No client hydration.** `client:load` / `client:idle` / `client:visible` islands appear in the rendered HTML as `<astro-island>` custom elements, but the Astro client runtime is not loaded, so they never hydrate.
-- **No framework integrations.** Renderers for React / Vue / Svelte / Solid / Preact islands are not registered on the container. Components that depend on them will fail to render.
+- **No framework integrations.** Renderers for React / Vue / Svelte / Solid / Preact islands are not registered on the container, so components that depend on them fail to render. By extension, `client:load` / `client:idle` / `client:visible` directives — which only apply to framework islands — aren't usable either.
 - **No prop pass-through from Vue.** A `.astro` file is rendered once at module-load time with empty props; props supplied by the Vue host are ignored. Frontmatter constants and Astro-side defaults work as usual.
 - **Container API is experimental upstream** and may break across Astro minor/patch releases.
 

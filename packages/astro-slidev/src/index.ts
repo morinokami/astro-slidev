@@ -15,7 +15,7 @@ export interface AstroSlidevOptions {
 
 const ASTRO_RE = /\.astro(?:\?|$)/;
 const VIRTUAL_CSS_PREFIX = "\0astro-slidev-css:";
-const VIRTUAL_CSS_RE = /^\0astro-slidev-css:(.+):(\d+)\.css$/;
+const VIRTUAL_CSS_RE = new RegExp(`^${VIRTUAL_CSS_PREFIX}(.+):(\\d+)\\.css$`);
 
 /**
  * Vite plugin: turns `*.astro` imports into a Vue component whose template is
@@ -31,7 +31,7 @@ const VIRTUAL_CSS_RE = /^\0astro-slidev-css:(.+):(\d+)\.css$/;
  * surfaced as virtual CSS modules side-effect-imported by the generated
  * Vue component, so Vite's CSS pipeline (and HMR) handles them.
  *
- * Limitations (PoC):
+ * Limitations:
  * - No client hydration: `client:*` islands render as static HTML only.
  * - No reactive props from Vue side: rendered with empty props. Author-side
  *   props (defined inside the .astro frontmatter) work as usual.
@@ -72,8 +72,8 @@ export default function astroSlidev(options: AstroSlidevOptions = {}): Plugin {
       if (!ASTRO_RE.test(id)) return null;
       const source = await readFile(cleanId, "utf8");
 
-      const resolveAstro: ResolveAstro = async (spec, importer) => {
-        const resolved = await this.resolve(spec, importer);
+      const resolveAstro: ResolveAstro = async (importPath, absPath) => {
+        const resolved = await this.resolve(importPath, absPath);
         if (!resolved) return null;
         return resolved.id.split("?")[0] ?? null;
       };
@@ -85,7 +85,7 @@ export default function astroSlidev(options: AstroSlidevOptions = {}): Plugin {
         resolveAstro,
       );
 
-      // Tell Vite/Rollup about the dep tree so edits invalidate this module.
+      // Tell Vite/Rolldown about the dep tree so edits invalidate this module.
       for (const dep of deps) {
         if (dep !== cleanId) this.addWatchFile(dep);
       }
