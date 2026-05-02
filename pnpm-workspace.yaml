@@ -2,26 +2,29 @@ packages:
   - packages/*
   - playground
 
-catalogMode: prefer
-
 catalog:
+  "@arethetypeswrong/cli": 0.18.2
   "@astrojs/compiler": 4.0.0
+  "@ls-lint/ls-lint": 2.3.1
   "@slidev/cli": 52.15.0
   "@slidev/theme-default": 0.25.0
   "@slidev/theme-seriph": 0.25.0
   "@types/node": 24.12.2
+  "@typescript/native-preview": 7.0.0-dev.20260501.1
   astro: 6.2.1
+  knip: 6.11.0
+  publint: 0.3.18
+  sherif: 1.11.1
+  typescript: 6.0.3
   vite: 8.0.10
-  vitest: 4.1.5
   vite-plus: 0.1.20
   vue: 3.5.33
+
+catalogMode: prefer
 overrides:
   vite: "catalog:"
-  vitest: "catalog:"
 peerDependencyRules:
   allowAny:
     - vite
-    - vitest
   allowedVersions:
     vite: "*"
-    vitest: "*"
