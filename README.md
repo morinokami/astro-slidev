@@ -1,1 +1,1 @@
-# astro-slidev
+packages/astro-slidev/README.md
