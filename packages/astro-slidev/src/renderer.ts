@@ -42,7 +42,7 @@ function filenameFor(absPath: string): string {
 
 export type ResolveAstro = (importPath: string, absPath: string) => Promise<string | null>;
 
-export interface RenderResult {
+interface RenderResult {
   html: string;
   /** CSS chunks per absolute `.astro` file path involved in this render. */
   cssByFile: Map<string, string[]>;
