@@ -13,6 +13,8 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
     "@ls-lint/ls-lint": "catalog:",
     "@types/node": "catalog:",
     "knip": "catalog:",
