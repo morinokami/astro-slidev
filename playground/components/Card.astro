@@ -1,0 +1,43 @@
+---
+import Badge from "./Badge.astro";
+
+const { title, tags } = Astro.props;
+---
+
+<article class="card">
+  <header class="card-header">
+    <h3>{title}</h3>
+    <div class="card-tags">
+      {tags.map((tag) => <Badge label={tag} />)}
+    </div>
+  </header>
+  <slot />
+</article>
+
+<style>
+  .card {
+    padding: 1rem 1.25rem;
+    border-radius: 0.75rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #1e293b;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #38bdf8;
+  }
+  .card-tags {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+</style>

@@ -1,5 +1,6 @@
 import { transform } from "@astrojs/compiler";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -20,64 +21,125 @@ function getContainer(): Promise<AstroContainer> {
   return containerPromise;
 }
 
-const cacheDirByProject = new Map<string, string>();
+let sessionCounter = 0;
 
-function getCacheDir(projectRoot: string): string {
-  const cached = cacheDirByProject.get(projectRoot);
-  if (cached) return cached;
-  const dir = join(projectRoot, "node_modules", ".astro-slidev");
-  cacheDirByProject.set(projectRoot, dir);
-  return dir;
+// Astro's compiler emits side-effect imports back to the original `.astro`
+// file with `?astro&type=style` etc. Those are normally intercepted by
+// Astro's own Vite plugin; here we run the compiled module directly through
+// Node's ESM loader, so we strip them and surface the CSS payloads via
+// `result.css` instead.
+const STRIP_SIDE_EFFECT_RE = /^\s*import\s+["'][^"']*\.astro\?[^"']*["'];?\s*$/gm;
+
+// `import X from "./Foo.astro"` / `import { X } from "./Foo.astro"`
+const FROM_ASTRO_RE = /(\bfrom\s*["'])([^"']+\.astro)(["'])/g;
+// Bare `import "./Foo.astro";` (no `?` suffix — those are stripped above).
+const SIDE_EFFECT_ASTRO_RE = /(^\s*import\s+["'])([^"']+\.astro)(["'])/gm;
+
+function filenameFor(absPath: string): string {
+  return `${createHash("sha1").update(absPath).digest("hex").slice(0, 16)}.mjs`;
 }
 
-let counter = 0;
+export type ResolveAstro = (specifier: string, importer: string) => Promise<string | null>;
 
-interface RenderResult {
+export interface RenderResult {
   html: string;
-  /** Scoped CSS chunks emitted by Astro's compiler, already class-hashed. */
-  css: string[];
+  /** CSS chunks per absolute `.astro` file path involved in this render. */
+  cssByFile: Map<string, string[]>;
+  /** All absolute `.astro` file paths involved (entry + transitive deps). */
+  deps: Set<string>;
 }
 
 /**
- * Compile an .astro source string into a JS module on disk, dynamically import it,
- * then hand the default export to the Astro Container API.
+ * Compile an entry `.astro` and its transitive `.astro` dependencies to JS
+ * modules on disk, then dynamically import the entry and hand its default
+ * export to the Astro Container API.
  *
- * The compiled module is written into `<project>/node_modules/.astro-slidev/`
- * so that bare-specifier imports (e.g. `astro/runtime/server/index.js`) resolve
- * through the project's normal node resolution.
- *
- * Astro's compiler emits side-effect imports back to the original `.astro`
- * file with `?astro&type=style` etc. (normally intercepted by Astro's Vite
- * plugin). We run the compiled module directly through Node's ESM loader, so
- * we strip those imports here and surface the actual CSS payloads via the
- * `css` field for the Vite plugin to register as virtual modules.
+ * Each render gets a fresh session directory under
+ * `<project>/node_modules/.astro-slidev/` so Node's ESM cache is bypassed
+ * across HMR reloads. Within a session, dep filenames are content-hash-free
+ * (sha1 of the absolute path), which keeps cyclic imports resolvable.
  */
 export async function renderAstroFile(
-  absPath: string,
-  source: string,
+  entryAbsPath: string,
+  entrySource: string,
   projectRoot: string,
+  resolveAstro: ResolveAstro,
   props: Record<string, unknown> = {},
 ): Promise<RenderResult> {
-  const result = await transform(source, {
-    filename: absPath,
-    sourcemap: false,
-    internalURL: "astro/runtime/server/index.js",
-    resolvePath: async (specifier) => specifier,
-  });
+  const sessionDir = join(
+    projectRoot,
+    "node_modules",
+    ".astro-slidev",
+    `s-${Date.now()}-${sessionCounter++}`,
+  );
+  await mkdir(sessionDir, { recursive: true });
 
-  const code = result.code.replace(/^\s*import\s+["'][^"']*\.astro\?[^"']*["'];?\s*$/gm, "");
+  const cssByFile = new Map<string, string[]>();
+  const deps = new Set<string>();
+  const seen = new Set<string>();
 
-  const cacheDir = getCacheDir(projectRoot);
-  await mkdir(cacheDir, { recursive: true });
-  const tmpFile = join(cacheDir, `astro-${Date.now()}-${counter++}.mjs`);
-  await writeFile(tmpFile, code, "utf8");
+  const process = async (absPath: string, source: string): Promise<void> => {
+    if (seen.has(absPath)) return;
+    seen.add(absPath);
+    deps.add(absPath);
+
+    const result = await transform(source, {
+      filename: absPath,
+      sourcemap: false,
+      internalURL: "astro/runtime/server/index.js",
+      resolvePath: async (s) => s,
+    });
+    cssByFile.set(absPath, result.css ?? []);
+
+    let code = result.code.replace(STRIP_SIDE_EFFECT_RE, "");
+
+    const specs = new Set<string>();
+    for (const m of code.matchAll(FROM_ASTRO_RE)) specs.add(m[2]!);
+    for (const m of code.matchAll(SIDE_EFFECT_ASTRO_RE)) specs.add(m[2]!);
+
+    const depEntries = await Promise.all(
+      [...specs].map(async (spec) => {
+        const depAbs = await resolveAstro(spec, absPath);
+        if (!depAbs) {
+          throw new Error(
+            `[astro-slidev] Failed to resolve ${JSON.stringify(spec)} from ${absPath}`,
+          );
+        }
+        return [spec, depAbs] as const;
+      }),
+    );
+    const specToFilename = new Map(depEntries.map(([spec, depAbs]) => [spec, filenameFor(depAbs)]));
+
+    const replaceImport = (full: string, p1: string, p2: string, p3: string): string => {
+      const filename = specToFilename.get(p2);
+      if (!filename) return full;
+      return `${p1}./${filename}${p3}`;
+    };
+    code = code.replace(FROM_ASTRO_RE, replaceImport);
+    code = code.replace(SIDE_EFFECT_ASTRO_RE, replaceImport);
+
+    await writeFile(join(sessionDir, filenameFor(absPath)), code, "utf8");
+
+    // Recurse into deps after writing this file. Cycles are safe because
+    // `seen` is checked at entry, and dep filenames were already resolved
+    // via `filenameFor` (deterministic from abs path).
+    await Promise.all(
+      depEntries.map(async ([, depAbs]) => {
+        if (seen.has(depAbs)) return;
+        const depSource = await readFile(depAbs, "utf8");
+        await process(depAbs, depSource);
+      }),
+    );
+  };
 
   try {
-    const mod = await import(pathToFileURL(tmpFile).href);
+    await process(entryAbsPath, entrySource);
+    const entryFile = join(sessionDir, filenameFor(entryAbsPath));
+    const mod = await import(pathToFileURL(entryFile).href);
     const container = await getContainer();
     const html = await container.renderToString(mod.default, { props });
-    return { html, css: result.css ?? [] };
+    return { html, cssByFile, deps };
   } finally {
-    await rm(tmpFile, { force: true }).catch(() => {});
+    await rm(sessionDir, { recursive: true, force: true }).catch(() => {});
   }
 }
