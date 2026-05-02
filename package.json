@@ -2,12 +2,23 @@
   "name": "astro-slidev-root",
   "version": "0.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morinokami/astro-slidev.git"
+  },
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build",
+    "ready": "vp check && vp run --filter './packages/*' build",
     "prepare": "vp config"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@ls-lint/ls-lint": "catalog:",
+    "@types/node": "catalog:",
+    "knip": "catalog:",
+    "publint": "catalog:",
+    "sherif": "catalog:",
+    "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

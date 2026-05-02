@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@slidev/cli": "catalog:",
-    "@slidev/theme-default": "latest",
-    "@slidev/theme-seriph": "latest",
+    "@slidev/theme-default": "catalog:",
+    "@slidev/theme-seriph": "catalog:",
     "astro": "catalog:",
     "astro-slidev": "workspace:*",
     "vue": "catalog:"

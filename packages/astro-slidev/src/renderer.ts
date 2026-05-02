@@ -32,7 +32,7 @@ function getCacheDir(projectRoot: string): string {
 
 let counter = 0;
 
-export interface RenderResult {
+interface RenderResult {
   html: string;
   /** Scoped CSS chunks emitted by Astro's compiler, already class-hashed. */
   css: string[];

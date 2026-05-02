@@ -2,7 +2,17 @@
   "name": "astro-slidev",
   "version": "0.0.1",
   "description": "Use Astro components inside Slidev slides via the Astro Container API.",
+  "homepage": "https://github.com/morinokami/astro-slidev#readme",
+  "bugs": {
+    "url": "https://github.com/morinokami/astro-slidev/issues"
+  },
   "license": "MIT",
+  "author": "Shinya Fujino <shf0811@gmail.com> (https://github.com/morinokami)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morinokami/astro-slidev.git",
+    "directory": "packages/astro-slidev"
+  },
   "files": [
     "dist"
   ],
@@ -22,11 +32,10 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@typescript/native-preview": "7.0.0-dev.20260501.1",
+    "@typescript/native-preview": "catalog:",
     "astro": "catalog:",
     "vite": "catalog:",
-    "vite-plus": "catalog:",
-    "vue": "catalog:"
+    "vite-plus": "catalog:"
   },
   "peerDependencies": {
     "astro": ">=4.9.0",
