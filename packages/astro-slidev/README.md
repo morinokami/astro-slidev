@@ -14,28 +14,22 @@ pnpm add -D astro-slidev astro
 
 ## Setup
 
-Register the Vite plugin via Slidev's [`setup/vite-plugins.ts`](https://sli.dev/custom/config-vite):
+Register the Vite plugin in [`vite.config.ts`](https://sli.dev/custom/config-vite):
 
 ```ts
-// setup/vite-plugins.ts
-import { defineVitePluginsSetup } from "@slidev/types";
+import { defineConfig } from "vite";
 import astroSlidev from "astro-slidev";
 
-export default defineVitePluginsSetup(() => [astroSlidev()]);
-```
-
-To let Slidev auto-import `.astro` files placed in `./components/`, extend its component options in `vite.config.ts`:
-
-```ts
-// vite.config.ts
-export default {
+export default defineConfig({
+  // `slidev` is a Slidev-specific Vite config extension.
+  // @ts-expect-error Vite's base config type does not know about it.
   slidev: {
     components: {
-      extensions: ["vue", "md", "js", "ts", "jsx", "tsx", "astro"],
-      include: [/\.vue$/, /\.vue\?vue/, /\.vue\?v=/, /\.md$/, /\.md\?vue/, /\.astro$/],
+      extensions: ["vue", "astro"],
     },
   },
-};
+  plugins: [astroSlidev()],
+});
 ```
 
 Place a `.astro` file under `./components/` and reference it from a slide by its filename:

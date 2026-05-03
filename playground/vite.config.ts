@@ -1,10 +1,12 @@
-// Slidev consumes this config. `vite` itself is not a direct dep here, so we
-// avoid importing `defineConfig` and just export a plain config object.
-export default {
+import astroSlidev from "astro-slidev";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  // @ts-expect-error:
   slidev: {
     components: {
-      extensions: ["vue", "md", "js", "ts", "jsx", "tsx", "astro"],
-      include: [/\.vue$/, /\.vue\?vue/, /\.vue\?v=/, /\.md$/, /\.md\?vue/, /\.astro$/],
+      extensions: ["vue", "astro"],
     },
   },
-};
+  plugins: [astroSlidev()],
+});
