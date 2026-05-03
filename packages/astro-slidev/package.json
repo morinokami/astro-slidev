@@ -1,6 +1,6 @@
 {
   "name": "astro-slidev",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Use Astro components inside Slidev slides via the Astro Container API.",
   "homepage": "https://github.com/morinokami/astro-slidev#readme",
   "bugs": {
