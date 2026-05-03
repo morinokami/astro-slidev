@@ -7,7 +7,7 @@ Use [Astro](https://astro.build/) components inside [Slidev](https://sli.dev/) s
 ## Install
 
 ```sh
-pnpm add -D astro-slidev astro
+pnpm add astro-slidev astro
 ```
 
 `astro` is a peer dependency. `vue` and `vite` are also peers and are normally already provided by Slidev.

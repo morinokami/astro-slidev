@@ -26,7 +26,7 @@ This block is rendered from an Astro component.
 # Install
 
 ```sh
-pnpm add -D astro-slidev astro
+pnpm add astro-slidev astro
 ```
 
 <div class="h-8"></div>
