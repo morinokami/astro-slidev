@@ -66,6 +66,7 @@ export async function renderAstroFile(
   projectRoot: string,
   resolveAstro: ResolveAstro,
   props: Record<string, unknown> = {},
+  sourceOverrides = new Map<string, string>(),
 ): Promise<RenderResult> {
   const sessionDir = join(
     projectRoot,
@@ -139,7 +140,7 @@ export async function renderAstroFile(
     await Promise.all(
       depEntries.map(async ([, depAbs]) => {
         if (seen.has(depAbs)) return;
-        const depSource = await readFile(depAbs, "utf8");
+        const depSource = sourceOverrides.get(depAbs) ?? (await readFile(depAbs, "utf8"));
         await compile(depAbs, depSource);
       }),
     );
