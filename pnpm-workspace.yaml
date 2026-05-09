@@ -15,7 +15,7 @@ catalog:
   "@typescript/native-preview": 7.0.0-dev.20260502.1
   astro: 6.2.1
   knip: 6.11.0
-  publint: 0.3.18
+  publint: 0.3.20
   sherif: 1.11.1
   typescript: 6.0.3
   vite: 8.0.10
