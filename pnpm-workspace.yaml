@@ -20,7 +20,7 @@ catalog:
   typescript: 6.0.3
   vite: 8.0.10
   vite-plus: 0.1.20
-  vue: 3.5.33
+  vue: 3.5.34
 
 catalogMode: prefer
 overrides:
