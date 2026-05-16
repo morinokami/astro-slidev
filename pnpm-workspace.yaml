@@ -12,7 +12,7 @@ catalog:
   "@slidev/theme-default": 0.25.0
   "@slidev/theme-seriph": 0.25.0
   "@types/node": 24.12.2
-  "@typescript/native-preview": 7.0.0-dev.20260502.1
+  "@typescript/native-preview": 7.0.0-dev.20260515.1
   astro: 6.2.1
   knip: 6.11.0
   publint: 0.3.21
